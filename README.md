@@ -1,4 +1,4 @@
-# aiy-photo-booth
+# AIY Photo Booth
 
 Thing: https://www.thingiverse.com/thing:3211763
 
