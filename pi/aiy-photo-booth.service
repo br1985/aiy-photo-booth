@@ -1,0 +1,13 @@
+[Unit]
+Description=AIY Photo Booth
+After=network.target
+
+[Service]
+User=pi
+Restart=always
+RestartSec=5
+ExecStart=/home/pi/aiy/run.sh
+WorkingDirectory=/home/pi/aiy/
+
+[Install]
+WantedBy=multi-user.target

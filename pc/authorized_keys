@@ -1,0 +1,1 @@
+restrict,command="/home/aiy/bin/sync-booth.sh" ssh-rsa PUT-YOUR-RASPBERRYPI-PUBLIC-KEY-HERE pi@raspberrypi-video
