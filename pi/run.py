@@ -15,37 +15,38 @@ import gpiozero
 import picamera
 
 def photo():
-    global led0, led1, buzzer, camera
+    global led0, led1, camera
 
     led0.update(aiy.leds.Leds.privacy_on())
     camera.start_preview()
 
-    x = 0.5
-    f = 110.0
+    with aiy._drivers._buzzer.PWMController(22) as buzzer:
+        x = 0.5
+        f = 110.0
 
-    while x > 1e-3:
-        led0.update(aiy.leds.Leds.rgb_on((
-            math.floor((random.random()**2) * 255),
-            math.floor((random.random()**2) * 255),
-            math.floor((random.random()**2) * 255))))
+        while x > 1e-3:
+            led0.update(aiy.leds.Leds.rgb_on((
+                math.floor((random.random()**2) * 255),
+                math.floor((random.random()**2) * 255),
+                math.floor((random.random()**2) * 255))))
+            buzzer.set_frequency(f)
+            time.sleep(x)
+            x *= 0.9
+
+            led0.update(aiy.leds.Leds.rgb_off())
+            buzzer.set_frequency(0.0)
+            time.sleep(x)
+            x *= 0.9
+
+            f *= 1.1
+
+        led0.update(aiy.leds.Leds.rgb_on((255, 255, 255)))
+
+        camera.capture('/home/pi/aiy/Pictures/' + time.strftime("%Y-%m-%d %H:%M:%S UTC") + '.jpg')
+
         buzzer.set_frequency(f)
         time.sleep(x)
-        x *= 0.9
-
-        led0.update(aiy.leds.Leds.rgb_off())
-        buzzer.set_frequency(0.0)
-        time.sleep(x)
-        x *= 0.9
-
-        f *= 1.1
-
-    led0.update(aiy.leds.Leds.rgb_on((255, 255, 255)))
-
-    camera.capture('/home/pi/aiy/Pictures/' + time.strftime("%Y-%m-%d %H:%M:%S UTC") + '.jpg')
-
-    buzzer.set_frequency(f)
-    time.sleep(x)
-    buzzer.set_frequency(0)
+        buzzer.set_frequency(0)
 
     camera.stop_preview()
     led0.update(aiy.leds.Leds.privacy_off())
@@ -62,37 +63,39 @@ def photo():
 
 
 def video():
-    global led0, led1, buzzer, camera
+    global led0, led1, camera
 
     led0.update(aiy.leds.Leds.privacy_on())
-    camera.start_preview()
 
-    x = 0.5
-    f = 110.0
+    with aiy._drivers._buzzer.PWMController(22) as buzzer:
+        camera.start_preview()
 
-    while x > 1e-3:
+        x = 0.5
+        f = 110.0
+
+        while x > 1e-3:
+            led1.off()
+            buzzer.set_frequency(f)
+            time.sleep(x)
+            x *= 0.9
+
+            led1.on()
+            buzzer.set_frequency(0.0)
+            time.sleep(x)
+            x *= 0.9
+
+            f *= 1.1
+
         led1.off()
+
+        camera.start_recording('/home/pi/aiy/Videos/' + time.strftime("%Y-%m-%d %H:%M:%S UTC") + '.h264')
+        camera.wait_recording(5)
+        camera.stop_recording()
+        camera.stop_preview()
+
         buzzer.set_frequency(f)
         time.sleep(x)
-        x *= 0.9
-
-        led1.on()
-        buzzer.set_frequency(0.0)
-        time.sleep(x)
-        x *= 0.9
-
-        f *= 1.1
-
-    led1.off()
-
-    camera.start_recording('/home/pi/aiy/Videos/' + time.strftime("%Y-%m-%d %H:%M:%S UTC") + '.h264')
-    camera.wait_recording(5)
-    camera.stop_recording()
-    camera.stop_preview()
-
-    buzzer.set_frequency(f)
-    time.sleep(x)
-    buzzer.set_frequency(0)
+        buzzer.set_frequency(0)
 
     led0.update(aiy.leds.Leds.privacy_off())
 
@@ -110,12 +113,16 @@ def video():
 def push0():
     global lock
 
+    print('push0')
+
     if lock.acquire(False):
         photo()
         lock.release()
-    
+
 def push1():
     global lock
+
+    print('push1')
 
     if lock.acquire(False):
         video()
@@ -138,7 +145,10 @@ random.seed()
 
 led1.on()
 
-with aiy._drivers._buzzer.PWMController(22) as buzzer:
-    print('ready...')
-    signal.pause()
+print('ready...')
 
+# signal.pause()
+
+while True:
+    print("status:", button0.is_pressed, button1.is_pressed)
+    time.sleep(5)
