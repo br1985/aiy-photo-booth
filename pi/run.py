@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+import datetime
+import json
 import math
 import random
 import signal
@@ -147,8 +149,30 @@ led1.on()
 
 print('ready...')
 
-# signal.pause()
+t0 = None
 
 while True:
     print("status:", button0.is_pressed, button1.is_pressed)
+
+    r = requests.get('http://192.168.0.46/cm', params={'cmnd': 'State', 'user': 'admin', 'password': '123456'})
+    t = datetime.datetime.strptime(r.json()['Time'], '%Y-%m-%dT%H:%M:%S')
+
+    print("sonoff:", t)
+
+    if t.strftime('%H:%M') != t0:
+        print('pushing watchdog...')
+
+        t1 = (t + datetime.timedelta(minutes=5)).strftime('%H:%M')
+        t2 = (t + datetime.timedelta(minutes=6)).strftime('%H:%M')
+
+        cmd = 'Timer1 ' + json.dumps({'Arm': 1, 'Time': t1, 'Window': 0, 'Days': '1111111', 'Repeat': 1, 'Output': 1, 'Action': 0})
+        requests.get('http://192.168.0.46/cm', params={'cmnd': cmd, 'user': 'admin', 'password': '123456'})
+
+        cmd = 'Timer2 ' + json.dumps({'Arm': 1, 'Time': t2, 'Window': 0, 'Days': '1111111', 'Repeat': 1, 'Output': 1, 'Action': 1})
+        requests.get('http://192.168.0.46/cm', params={'cmnd': cmd, 'user': 'admin', 'password': '123456'})
+
+        print('done:', t1, t2)
+        
+        t0 = t.strftime('%H:%M')
+        
     time.sleep(5)
